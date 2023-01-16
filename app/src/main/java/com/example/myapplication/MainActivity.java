@@ -1,13 +1,14 @@
 package com.example.myapplication;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
-import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -18,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ProgressBar mProgressBar;
     private TextView mTextView;
+    private EditText mPlainText;
+    private String name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mTextView = (TextView) findViewById(R.id.textView);
+        mPlainText = (EditText) findViewById(R.id.plainText);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mProgressBar.setVisibility(View.INVISIBLE);
     }
@@ -36,19 +40,21 @@ public class MainActivity extends AppCompatActivity {
         mProgressBar.setVisibility(View.VISIBLE);
 
         GitHubService gitHubService = GitHubService.retrofit.create(GitHubService.class);
-        final Call<List<Repos>> call =
-                gitHubService.getRepos("erandj");
 
-        call.enqueue(new Callback<List<Repos>>() {
+        name = mPlainText.getText().toString();
+        final Call<GitResult> call =
+                gitHubService.getUsers(name);
+
+        call.enqueue(new Callback<GitResult>() {
             @Override
-            public void onResponse(Call<List<Repos>> call, Response<List<Repos>> response) {
-                // response.isSuccessfull() is true if the response code is 2xx
-                if (response.isSuccessful()) {
-                    mTextView.setText(response.body().toString() + "\n");
+            public void onResponse(Call<GitResult>  call, Response<GitResult>  response) {
 
-                    for (int i = 0; i < response.body().size(); i++){
-                        mTextView.append(response.body().get(i).getName()+"\n");
-                    }
+                if (response.isSuccessful()) {
+                    GitResult result = response.body();
+
+                    String user = "Аккаунт GitHub: " + result.getItems().get(0).getLogin();
+                    mTextView.setText(user);
+                    Log.i("Git", String.valueOf(result.getItems().size()));
 
                     mProgressBar.setVisibility(View.INVISIBLE);
 
@@ -66,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<Repos>> call, Throwable throwable) {
+            public void onFailure(Call<GitResult>  call, Throwable throwable) {
                 mTextView.setText("Что-то пошло не так: " + throwable.getMessage());
             }
         });
