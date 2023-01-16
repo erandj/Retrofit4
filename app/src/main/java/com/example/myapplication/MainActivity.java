@@ -7,6 +7,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -31,29 +32,29 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void onClick(View view) {
+        mTextView.setText("");
         mProgressBar.setVisibility(View.VISIBLE);
 
         GitHubService gitHubService = GitHubService.retrofit.create(GitHubService.class);
-        final Call<User> call =
-                gitHubService.getUser("erandj");
+        final Call<List<Repos>> call =
+                gitHubService.getRepos("erandj");
 
-        call.enqueue(new Callback<User>() {
+        call.enqueue(new Callback<List<Repos>>() {
             @Override
-            public void onResponse(Call<User> call, Response<User> response) {
+            public void onResponse(Call<List<Repos>> call, Response<List<Repos>> response) {
                 // response.isSuccessfull() is true if the response code is 2xx
                 if (response.isSuccessful()) {
-                    User user = response.body();
+                    mTextView.setText(response.body().toString() + "\n");
 
-                    // Получаем json из github-сервера и конвертируем его в удобный вид
-                    mTextView.setText("Аккаунт Github: " + user.getName() +
-                            "\nСайт: " + user.getBlog() +
-                            "\nКомпания: " + user.getCompany());
+                    for (int i = 0; i < response.body().size(); i++){
+                        mTextView.append(response.body().get(i).getName()+"\n");
+                    }
 
                     mProgressBar.setVisibility(View.INVISIBLE);
+
                 } else {
                     int statusCode = response.code();
 
-                    // handle request errors yourself
                     ResponseBody errorBody = response.errorBody();
                     try {
                         mTextView.setText(errorBody.string());
@@ -65,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<User> call, Throwable throwable) {
+            public void onFailure(Call<List<Repos>> call, Throwable throwable) {
                 mTextView.setText("Что-то пошло не так: " + throwable.getMessage());
             }
         });
